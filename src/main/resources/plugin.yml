@@ -1,0 +1,17 @@
+name: BearPacketEvents
+main: dev.esoxiii.bearprotect.lib.BearPacketEventsPlugin
+version: ${peVersion}
+authors:
+  - Esoxiii
+  - retrooper and the PacketEvents contributors
+api-version: 1.13
+description: PacketEvents fork used by BearProtect (GPLv3)
+website: https://github.com/Xhhk01/BearPacketEvents
+softdepend:
+  - ProtocolLib
+  - ProtocolSupport
+  - ViaVersion
+  - ViaBackwards
+  - ViaRewind
+  - Geyser-Spigot
+folia-supported: true

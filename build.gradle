@@ -1,0 +1,88 @@
+plugins {
+    id 'java'
+}
+
+group = 'dev.esoxiii.bearprotect'
+version = '2.14.1-bear'
+
+def javaVersion = 17
+// Allows building with a newer installed JDK (bytecode still targets javaVersion): -Ptoolchain=21
+def toolchainVersion = (findProperty('toolchain') ?: javaVersion) as int
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    apiGenerator
+}
+
+// Bukkit, Paper, Netty and ViaVersion are only needed as compile-time headers. They are generated
+// from gradle/api-signatures so the build needs no server jars or extra repositories.
+def generatorClasses = layout.buildDirectory.dir('api-generator/classes')
+tasks.register('compileApiGenerator', JavaCompile) {
+    source = files('gradle/GenerateCompileApis.java')
+    classpath = configurations.apiGenerator
+    destinationDirectory = generatorClasses
+    javaCompiler = javaToolchains.compilerFor { languageVersion = JavaLanguageVersion.of(toolchainVersion) }
+    options.release = javaVersion
+    options.encoding = 'UTF-8'
+}
+tasks.register('generateCompileApis', JavaExec) {
+    group = 'build setup'
+    description = 'Generates compile-only API headers from text declarations.'
+    dependsOn tasks.named('compileApiGenerator')
+    inputs.dir('gradle/api-signatures')
+    outputs.dir(layout.buildDirectory.dir('compile-apis'))
+    classpath = files(generatorClasses) + configurations.apiGenerator
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(toolchainVersion) }
+    mainClass = 'GenerateCompileApis'
+    maxHeapSize = '2g'
+    args file('gradle/api-signatures').absolutePath, layout.buildDirectory.dir('compile-apis').get().asFile.absolutePath
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(toolchainVersion)
+    withSourcesJar()
+}
+
+dependencies {
+    apiGenerator 'org.ow2.asm:asm:9.8'
+    apiGenerator 'com.google.code.gson:gson:2.10.1'
+
+    compileOnly files(layout.buildDirectory.file('compile-apis/bearprotect.jar')).builtBy(tasks.named('generateCompileApis'))
+    compileOnly 'org.jetbrains:annotations:26.0.2-1'
+    compileOnly 'org.jspecify:jspecify:1.0.0'
+    compileOnly 'org.checkerframework:checker-qual:3.49.3'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    if (name != 'compileApiGenerator') {
+        dependsOn tasks.named('generateCompileApis')
+    }
+    options.release = javaVersion
+    options.encoding = 'UTF-8'
+    options.compilerArgs += ['-parameters', '-Xmaxerrs', '1500']
+}
+
+processResources {
+    filesMatching('plugin.yml') {
+        expand(peVersion: project.version)
+    }
+}
+
+jar {
+    archiveBaseName = 'BearPacketEvents'
+    from('LICENSE')
+    manifest.attributes('Implementation-Title': 'BearPacketEvents', 'Implementation-Version': project.version)
+}
+
+sourcesJar {
+    archiveBaseName = 'BearPacketEvents'
+    from('LICENSE')
+}
+
+tasks.withType(AbstractArchiveTask).configureEach {
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
