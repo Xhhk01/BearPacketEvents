@@ -1,7 +1,7 @@
 # BearPacketEvents
 
 A fork of [PacketEvents](https://github.com/retrooper/packetevents) by retrooper, hardened for
-[BearProtect](https://builtbybit.com/) (packet-level anti-crash). It runs as its own plugin, and
+[BearProtect](https://discord.gg/y9tq64kgxB) (packet-level anti-crash). It runs as its own plugin, and
 BearProtect depends on it.
 
 Based on PacketEvents `2.14.1-SNAPSHOT` (after `v2.14.0`). Every class is relocated to
